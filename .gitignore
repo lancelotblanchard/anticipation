@@ -1,4 +1,8 @@
+# Python-related
 .venv
+*.egg-info/
+__pycache__/
 
+# Add tokenize-custom but not any finetuning data
 finetune/*
 !finetune/tokenize-custom.py
