@@ -85,8 +85,8 @@ def maybe_tokenize(compound_tokens):
         return None, None, 1 # short track
 
     # don't want to deal with extremely long tracks
-    if end_time > TIME_RESOLUTION*MAX_TRACK_TIME_IN_SECONDS:
-        return None, None, 2 # long track
+    # if end_time > TIME_RESOLUTION*MAX_TRACK_TIME_IN_SECONDS:
+    #     return None, None, 2 # long track
 
     # skip sequences more instruments than MIDI channels (16)
     if len(ops.get_instruments(events)) > MAX_TRACK_INSTR:
