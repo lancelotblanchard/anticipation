@@ -291,12 +291,13 @@ def compound_to_events(tokens, stats=False):
     return tokens
 
 
-def events_to_compound(tokens, debug=False):
+def events_to_compound(tokens, removeControls=True, debug=False):
     tokens = unpad(tokens)
 
     # move all tokens to zero-offset for synthesis
-    tokens = [tok - CONTROL_OFFSET if tok >= CONTROL_OFFSET and tok != SEPARATOR else tok
-              for tok in tokens]
+    if removeControls:
+        tokens = [tok - CONTROL_OFFSET if tok >= CONTROL_OFFSET and tok != SEPARATOR else tok
+                for tok in tokens]
 
     # remove type offsets
     tokens[0::3] = [tok - TIME_OFFSET if tok != SEPARATOR else tok for tok in tokens[0::3]]
