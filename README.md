@@ -1,5 +1,33 @@
 # Anticipatory Music Transformer
 
+## Note: Changelog of this fork
+
+- Commits 363e3ac, cd93efc: Add `--add-kick-drum` argument in `midi-preprocess.py`.
+- Commit ccfbeb6: Add `tokenize-custom.py` in `finetune`.
+- Commit 3b3d414: Add `removeControls` option to `events_to_compound` function in `convert.py`. 
+- Commit ffb0c22: Remove the check for long tracks in `tokenize.py`.
+- Commit 69600b0: Update `sample.py` to prevent the generation of REST tokens instead of time and durations.
+
+## Note: How to prepare data for training
+
+1. Create 3 MIDI files for Train, Validation, and Test, and put them in the `./finetune` directory following this structure:
+```
+├── finetune
+│   ├── {DATASET_NAME}
+│   │   ├── Train
+│   │   │   ├── {DATASET_NAME}_train.mid
+│   │   ├── Validation
+│   │   │   ├── {DATASET_NAME}_validation.mid
+│   │   ├── Test
+│   │   │   ├── {DATASET_NAME}_test.mid
+```
+
+2. In `./train`, run `python3 midi-preprocess.py ../finetune/{DATASET_NAME}`. The argument `--add-kick-drum` adds a drum kick on every beat.
+
+3. Back in `./finetune`, run `python3 tokenize-custom.py {DATASET_NAME} -k 10`.
+
+## Original README.md:
+
 Implementation of the methods described in [Anticipatory Music Transformer](https://arxiv.org/abs/2306.08620).
 
 by [__John Thickstun__](https://johnthickstun.com/), [__David Hall__](http://dlwh.org/), [__Chris Donahue__](https://chrisdonahue.com/), and [__Percy Liang__](https://cs.stanford.edu/~pliang/).
