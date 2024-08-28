@@ -1,0 +1,4 @@
+.venv
+
+finetune/*
+!finetune/tokenize-custom.py
