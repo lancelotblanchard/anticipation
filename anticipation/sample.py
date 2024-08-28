@@ -21,10 +21,10 @@ def safe_logits(logits, idx):
     # don't generate stuff in the wrong time slot
     if idx % 3 == 0:
         logits[DUR_OFFSET:DUR_OFFSET+MAX_DUR] = -float('inf')
-        logits[NOTE_OFFSET:NOTE_OFFSET+MAX_NOTE] = -float('inf')
+        logits[NOTE_OFFSET:CONTROL_OFFSET] = -float('inf')
     elif idx % 3 == 1:
         logits[TIME_OFFSET:TIME_OFFSET+MAX_TIME] = -float('inf')
-        logits[NOTE_OFFSET:NOTE_OFFSET+MAX_NOTE] = -float('inf')
+        logits[NOTE_OFFSET:CONTROL_OFFSET] = -float('inf')
     elif idx % 3 == 2:
         logits[TIME_OFFSET:TIME_OFFSET+MAX_TIME] = -float('inf')
         logits[DUR_OFFSET:DUR_OFFSET+MAX_DUR] = -float('inf')
