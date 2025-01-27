@@ -60,20 +60,34 @@ def future_logits(logits, curtime):
     return logits
 
 
-def instr_logits(logits, full_history):
+def instr_logits(logits, full_history, active_instruments=None):
     """ don't sample more than 16 instruments """
     instrs = ops.get_instruments(full_history)
-    if len(instrs) < 15: # 16 - 1 to account for the reserved drum track
-        return logits
+    if len(instrs) >= 15: # 16 - 1 to account for the reserved drum track
+        for instr in range(MAX_INSTR):
+            if instr not in instrs:
+                logits[NOTE_OFFSET+instr*MAX_PITCH:NOTE_OFFSET+(instr+1)*MAX_PITCH] = -float('inf')
 
-    for instr in range(MAX_INSTR):
-        if instr not in instrs:
-            logits[NOTE_OFFSET+instr*MAX_PITCH:NOTE_OFFSET+(instr+1)*MAX_PITCH] = -float('inf')
+    if active_instruments is not None:
+        # Hide all instruments up to the first active instrument
+        sorted_active_instruments = sorted(active_instruments)
+        logits[NOTE_OFFSET:NOTE_OFFSET+MAX_PITCH*sorted_active_instruments[0]] = -float('inf')
+
+        # Hide all instruments between the active instruments
+        for i in range(len(sorted_active_instruments)-1):
+            logits[NOTE_OFFSET+MAX_PITCH*(sorted_active_instruments[i]+1):NOTE_OFFSET+MAX_PITCH*sorted_active_instruments[i+1]] = -float('inf')
+        
+        # Hide all instruments after the last active instrument
+        logits[NOTE_OFFSET+MAX_PITCH*(sorted_active_instruments[-1]+1):REST] = -float('inf')
 
     return logits
 
+def dur_logits(logits):
+    logits[DUR_OFFSET:DUR_OFFSET+49] = -float('inf')
 
-def add_token(model, z, tokens, top_p, current_time, debug=False):
+    return logits
+
+def add_token(model, z, tokens, top_p, current_time, debug=False, active_instruments=None, forceTime=None, forceDuration=None):
     assert len(tokens) % 3 == 0
 
     history = tokens.copy()
@@ -92,12 +106,18 @@ def add_token(model, z, tokens, top_p, current_time, debug=False):
             logits = safe_logits(logits, idx)
             if i == 0:
                 logits = future_logits(logits, current_time - offset)
+            elif i == 1:
+                logits = dur_logits(logits)
             elif i == 2:
-                logits = instr_logits(logits, tokens)
+                logits = instr_logits(logits, tokens, active_instruments=active_instruments)
             logits = nucleus(logits, top_p)
 
             probs = F.softmax(logits, dim=-1)
             token = torch.multinomial(probs, 1)
+            if i == 0 and forceTime:
+                token = forceTime - offset
+            if i == 1 and forceDuration:
+                token = forceDuration
             new_token.append(int(token))
 
     new_token[0] += offset # revert to full sequence timing
@@ -107,7 +127,7 @@ def add_token(model, z, tokens, top_p, current_time, debug=False):
     return new_token
 
 
-def generate(model, start_time, end_time, inputs=None, controls=None, top_p=1.0, debug=False, delta=DELTA*TIME_RESOLUTION):
+def generate(model, start_time, end_time, inputs=None, controls=None, top_p=1.0, debug=False, delta=DELTA*TIME_RESOLUTION, active_instruments=None):
     if inputs is None:
         inputs = []
 
@@ -173,7 +193,7 @@ def generate(model, start_time, end_time, inputs=None, controls=None, top_p=1.0,
                     # nothing more to anticipate
                     anticipated_time = math.inf
 
-            new_token = add_token(model, z, tokens, top_p, max(start_time,current_time))
+            new_token = add_token(model, z, tokens, top_p, max(start_time,current_time), active_instruments=active_instruments)
             new_time = new_token[0] - TIME_OFFSET
             if new_time >= end_time:
                 break
