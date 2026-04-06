@@ -1,3 +1,5 @@
+# Thank you Heidi Lei and Katherine Liang!!
+
 import os
 import shutil
 from argparse import ArgumentParser
